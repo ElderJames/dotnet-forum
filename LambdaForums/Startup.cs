@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace LambdaForums
 {
@@ -44,13 +45,12 @@ namespace LambdaForums
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, DataSeeder dataSeeder)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, DataSeeder dataSeeder)
         {
             if (env.IsDevelopment())
             {
-                app.UseBrowserLink();
                 app.UseDeveloperExceptionPage();
-                app.UseDatabaseErrorPage();
+                app.UseMigrationsEndPoint();
             }
             else
             {
@@ -60,14 +60,16 @@ namespace LambdaForums
             dataSeeder.SeedSuperUser();
 
             app.UseStaticFiles();
+            app.UseRouting();
 
             app.UseAuthentication();
 
-            app.UseMvc(routes =>
+            app.UseEndpoints(endpoints =>
             {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapRazorPages();
+                endpoints.MapControllers();
+                //endpoints.MapBlazorHub();
+                endpoints.MapFallbackToFile("/index.html");
             });
         }
     }
