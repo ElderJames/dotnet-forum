@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -33,7 +32,8 @@ namespace LambdaForums.Controllers
 
         public IActionResult Index()
         {
-            var forums = _forumService.GetAll().Select(forum => new ForumListingModel {
+            var forums = _forumService.GetAll().Select(forum => new ForumListingModel
+            {
                 Id = forum.Id,
                 Name = forum.Title,
                 Description = forum.Description,
@@ -45,7 +45,7 @@ namespace LambdaForums.Controllers
 
             var model = new ForumIndexModel
             {
-                ForumList = forums.OrderBy(f => f.Name )
+                ForumList = forums.OrderBy(f => f.Name)
             };
 
             return View(model);
@@ -86,7 +86,7 @@ namespace LambdaForums.Controllers
         public IActionResult Search(int id, string searchQuery)
         {
             return RedirectToAction("Topic", new { id, searchQuery });
-        }              
+        }
 
         [Authorize(Roles = "Admin")]
         public IActionResult Create()
@@ -104,8 +104,8 @@ namespace LambdaForums.Controllers
 
             if (model.ImageUpload != null)
             {
-                var blockBlob = UploadForumImage(model.ImageUpload);
-                imageUri = blockBlob.Uri.AbsoluteUri;
+                var filtPath = await _uploadService.UploadFile(model.ImageUpload);
+                imageUri = filtPath;
             }
 
             else
@@ -140,18 +140,6 @@ namespace LambdaForums.Controllers
                 Description = forum.Description,
                 ImageUrl = forum.ImageUrl
             };
-        }
-
-        private CloudBlockBlob UploadForumImage(IFormFile file)
-        {
-            var connectionString = _configuration.GetConnectionString("AzureStorageAccountConnectionString");
-            var container = _uploadService.GetBlobContainer(connectionString, "forum-images");
-            var parsedContentDisposition = ContentDispositionHeaderValue.Parse(file.ContentDisposition);
-            var filename = Path.Combine(parsedContentDisposition.FileName.ToString().Trim('"'));
-            var blockBlob = container.GetBlockBlobReference(filename);
-            blockBlob.UploadFromStreamAsync(file.OpenReadStream()).Wait();
-
-            return blockBlob;
         }
     }
 }

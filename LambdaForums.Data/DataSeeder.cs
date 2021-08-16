@@ -1,6 +1,5 @@
 ﻿using LambdaForums.Data.Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,17 +9,18 @@ namespace LambdaForums.Data
     public class DataSeeder
     {
         private ApplicationDbContext _context;
+        private RoleManager<IdentityRole> _roleManager;
+        private UserManager<ApplicationUser> _userManager;
 
-        public DataSeeder(ApplicationDbContext context)
+        public DataSeeder(ApplicationDbContext context, RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _roleManager = roleManager;
+            _userManager = userManager;
         }
 
-        public Task SeedSuperUser()
+        public async Task SeedSuperUser()
         {
-            var roleStore = new RoleStore<IdentityRole>(_context);
-            var userStore = new UserStore<ApplicationUser>(_context);
-           
             var user = new ApplicationUser
             {
                 UserName = "ForumAdmin",
@@ -38,22 +38,20 @@ namespace LambdaForums.Data
 
             var hasAdminRole = _context.Roles.Any(roles => roles.Name == "Admin");
 
-            if(!hasAdminRole)
+            if (!hasAdminRole)
             {
-                roleStore.CreateAsync(new IdentityRole { Name = "Admin", NormalizedName = "admin" });
+                await _roleManager.CreateAsync(new IdentityRole { Name = "Admin", NormalizedName = "admin" });
             }
 
-            var hasSuperUser = _context.Users.Any(u => u.NormalizedUserName == user.UserName);
+            var hasSuperUser = _context.Users.Any(u => u.NormalizedUserName == user.NormalizedUserName);
 
-            if(!hasSuperUser)
+            if (!hasSuperUser)
             {
-                userStore.CreateAsync(user);
-                userStore.AddToRoleAsync(user, "Admin");
+                await _userManager.CreateAsync(user);
+                await _userManager.AddToRoleAsync(user, "Admin");
             }
 
-            _context.SaveChangesAsync();
-
-            return Task.CompletedTask;
+            await _context.SaveChangesAsync();
         }
     }
 }

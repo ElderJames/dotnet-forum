@@ -32,20 +32,19 @@ namespace LambdaForums.Service
         }
 
 
-        public async Task SetProfileImage(string id, Uri uri)
+        public async Task SetProfileImage(string id, string filePath)
         {
             var user = GetById(id);
-            user.ProfileImageUrl = uri.AbsoluteUri;
+            user.ProfileImageUrl = filePath;
             _context.Update(user);
             await _context.SaveChangesAsync();
-            
         }
 
         public async Task Add(ApplicationUser user)
         {
             _context.Add(user);
             await _context.SaveChangesAsync();
-        }        
+        }
 
         public async Task Deactivate(ApplicationUser user)
         {

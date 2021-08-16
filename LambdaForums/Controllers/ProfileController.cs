@@ -6,9 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace LambdaForums.Controllers
@@ -21,7 +19,11 @@ namespace LambdaForums.Controllers
         private readonly IUpload _uploadService;
         private readonly IConfiguration _configuration;
 
-        public ProfileController(UserManager<ApplicationUser> userManager, IApplicationUser userService, IUpload uploadService, IConfiguration configuration)
+        public ProfileController(
+            UserManager<ApplicationUser> userManager,
+            IApplicationUser userService,
+            IUpload uploadService,
+            IConfiguration configuration)
         {
             _userManager = userManager;
             _userService = userService;
@@ -51,21 +53,14 @@ namespace LambdaForums.Controllers
         [HttpPost]
         public async Task<IActionResult> UploadProfileImage(IFormFile file)
         {
+            if (file == null)
+            {
+                return BadRequest();
+            }
+
             var userId = _userManager.GetUserId(User);
-
-            var connectionString = _configuration.GetConnectionString("AzureStorageAccountConnectionString");
-
-            var container = _uploadService.GetBlobContainer(connectionString, "profile-images");
-
-            var parsedContentDisposition = ContentDispositionHeaderValue.Parse(file.ContentDisposition);
-
-            var filename = Path.Combine(parsedContentDisposition.FileName.Trim('"'));
-
-            var blockBlob = container.GetBlockBlobReference(filename);
-
-            await blockBlob.UploadFromStreamAsync(file.OpenReadStream());
-
-            await _userService.SetProfileImage(userId, blockBlob.Uri);
+            var filePath = await _uploadService.UploadFile(file);
+            await _userService.SetProfileImage(userId, filePath);
 
             return RedirectToAction("Detail", "Profile", new { id = userId });
         }

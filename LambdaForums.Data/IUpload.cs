@@ -1,9 +1,11 @@
-﻿using Microsoft.WindowsAzure.Storage.Blob;
+﻿using Microsoft.AspNetCore.Http;
+using System;
+using System.Threading.Tasks;
 
 namespace LambdaForums.Data
 {
     public interface IUpload
     {
-        CloudBlobContainer GetBlobContainer(string connectionString, string containerName);
+        ValueTask<string> UploadFile(IFormFile file);
     }
 }

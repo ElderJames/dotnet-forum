@@ -54,7 +54,7 @@ namespace LambdaForums.Service
 
         public IEnumerable<Forum> GetAll()
         {
-            return _context.Forums.Include(forum => forum.Posts);
+            return _context.Forums.Include(forum => forum.Posts).ToList();
         }
 
 
